@@ -13,6 +13,8 @@ elif sys.platform == 'darwin':
     _libcuda_libname_list = ['libcuda.dylib']
 elif sys.platform == 'Windows':
     _libcuda_libname_list = ['cuda.lib']
+elif sys.platform == 'win32':
+    _libcuda_libname_list = ['nvcuda.dll']
 else:
     raise RuntimeError('unsupported platform')
 

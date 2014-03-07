@@ -14,6 +14,8 @@ elif sys.platform == 'darwin':
     _libcufft_libname_list = ['libcufft.dylib']
 elif sys.platform == 'Windows':
     _libcufft_libname_list = ['cufft.lib']
+elif sys.platform == 'win32':
+    _libcufft_libname_list = ['cufft64_55.dll']
 else:
     raise RuntimeError('unsupported platform')
 

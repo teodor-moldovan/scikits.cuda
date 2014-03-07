@@ -26,6 +26,8 @@ elif sys.platform == 'darwin':
     _libcublas_libname_list = ['libcublas.dylib']
 elif sys.platform == 'Windows':
     _libcublas_libname_list = ['cublas.lib']
+elif sys.platform == 'win32':
+    _libcublas_libname_list = ['cublas64_55.dll']
 else:
     raise RuntimeError('unsupported platform')
 
@@ -222,7 +224,11 @@ def cublasGetVersion(handle):
 # We append zeros to match format of version returned by cublasGetVersion():
 # XXX This approach to obtaining the CUBLAS version number
 # may break Windows/MacOSX compatibility XXX
-_cublas_version = int(re.search('[\D\.]\.+(\d)',
+
+if sys.platform == 'win32':
+	_cublas_version = 5500
+else:
+	_cublas_version = int(re.search('[\D\.]\.+(\d)',
       utils.get_soname(utils.find_lib_path(_libcublas.cublasGetVersion_v2))).group(1) + '000')
 
 _libcublas.cublasSetStream_v2.restype = int

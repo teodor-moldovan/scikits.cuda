@@ -4,6 +4,7 @@
 Utility functions.
 """
 
+import sys
 import ctypes
 import re
 import subprocess
@@ -111,10 +112,14 @@ class DL_info(ctypes.Structure):
                 ('dli_fbase', ctypes.c_void_p),
                 ('dli_sname', ctypes.c_char_p),
                 ('dli_saddr', ctypes.c_void_p)]
-libdl = ctypes.cdll.LoadLibrary('libdl.so')
-libdl.dladdr.restype = int
-libdl.dladdr.argtypes = [ctypes.c_void_p,
-                         ctypes.c_void_p]
+
+if sys.platform == 'win32':
+	lbdl = None
+else:
+	libdl = ctypes.cdll.LoadLibrary('libdl.so')
+	libdl.dladdr.restype = int
+	libdl.dladdr.argtypes = [ctypes.c_void_p,
+							 ctypes.c_void_p]
     
 def find_lib_path(func):
     """

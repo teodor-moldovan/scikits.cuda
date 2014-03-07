@@ -14,6 +14,8 @@ elif sys.platform == 'darwin':
     _libcudart_libname_list = ['libcudart.dylib']
 elif sys.platform == 'Windows':
     _libcudart_libname_list = ['cudart.lib']
+elif sys.platform == 'win32':
+    _libcudart_libname_list = ['cudart64_55.dll']
 else:
     raise RuntimeError('unsupported platform')
 
