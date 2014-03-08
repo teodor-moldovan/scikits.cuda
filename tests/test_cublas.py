@@ -485,8 +485,35 @@ class test_cublas(TestCase):
         
         X_ = np.array([a.T for a in a_gpu.get()])
 
-        assert np.allclose(X,X_)
+        assert np.allclose(X,X_,6)
 
+
+    def test_cublasSgetriBatched(self):
+        l,m = 11,7
+        np.random.seed(1)
+        A = np.random.rand(l,m, m).astype(np.float32)
+        
+        a_gpu = gpuarray.to_gpu(A)
+        a_arr = bptrs(a_gpu)
+        c_gpu = gpuarray.empty((l,m,m), np.float32)
+        c_arr = bptrs(c_gpu)
+
+        p_gpu = gpuarray.empty((l,m), np.int32)
+        i_gpu = gpuarray.zeros(1, np.int32)
+
+        cublas.cublasSgetrfBatched(self.cublas_handle, 
+                    m, a_arr.gpudata, m, p_gpu.gpudata, 
+                    i_gpu.gpudata, l)
+
+        cublas.cublasSgetriBatched(self.cublas_handle, 
+                    m, a_arr.gpudata, m, p_gpu.gpudata, c_arr.gpudata,m,
+                    i_gpu.gpudata, l)
+        
+        X = np.array(map(np.linalg.inv,A))
+        X_ = c_gpu.get()
+
+        assert np.allclose(X,X_,6)
+        
 
 def suite():
     s = TestSuite()
@@ -515,6 +542,7 @@ def suite():
     s.addTest(test_cublas('test_cublasSgemmBatched'))
     s.addTest(test_cublas('test_cublasStrsmBatched'))
     s.addTest(test_cublas('test_cublasSgetrfBatched'))
+    s.addTest(test_cublas('test_cublasSgetriBatched'))
     if misc.get_compute_capability(pycuda.autoinit.device) >= 1.3:
         s.addTest(test_cublas('test_cublasIdamax'))
         s.addTest(test_cublas('test_cublasIzamax'))

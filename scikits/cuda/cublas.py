@@ -222,8 +222,8 @@ def cublasGetVersion(handle):
 # We append zeros to match format of version returned by cublasGetVersion():
 # XXX This approach to obtaining the CUBLAS version number
 # may break Windows/MacOSX compatibility XXX
-_cublas_version = int(re.search('[\D\.]\.+(\d)',
-      utils.get_soname(utils.find_lib_path(_libcublas.cublasGetVersion_v2))).group(1) + '000')
+fln = utils.get_soname(utils.find_lib_path(_libcublas.cublasGetVersion_v2))
+_cublas_version = str(int(float(re.findall(r"\d+.?\d*", fln)[0])*1000.0))
 
 _libcublas.cublasSetStream_v2.restype = int
 _libcublas.cublasSetStream_v2.argtypes = [ctypes.c_int,
@@ -4841,23 +4841,28 @@ class vreq(object):
     """
     Decorator to replace function with a placeholder unless cublas version is greater than v. Placeholder raises an exception. 
     """
-    def __init__(self,v):
+    def __init__(self,v,restype=None, argtypes=None):
         self.vs = str(v)
-        self.vi = int(v*1000)
+        self.v = int(v*1000)
+        self.rt = restype
+        self.at = argtypes
 
     def __call__(self,f):
-        def f_new(*args,**kwargs):
-            raise NotImplementedError('CUBLAS '+self.vs+' required')
-        f_new.__doc__ = f.__doc__
 
-        if _cublas_version >= self.vi:
+        if _cublas_version >= self.v:
+            name = eval("_libcublas."+f.__name__)
+            name.restype = self.rt
+            name.argtypes = self.at
             return f
         else:
+            def f_new(*args,**kwargs):
+                raise NotImplementedError('CUBLAS '+self.vs+' required')
+            f_new.__doc__ = f.__doc__
             return f_new
         
      
-_libcublas.cublasSdgmm.restype = int
-_libcublas.cublasSdgmm.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
@@ -4868,7 +4873,7 @@ _libcublas.cublasSdgmm.argtypes = [ctypes.c_int,
                                    ctypes.c_void_p,
                                    ctypes.c_int]
 
-@vreq(5.0)
+@vreq(5.0,restype,argtypes)
 def cublasSdgmm(handle, mode, m, n, A, lda, x, incx, C, ldc):
     """
     Matrix-diagonal matrix product for real general matrix.
@@ -4883,8 +4888,8 @@ def cublasSdgmm(handle, mode, m, n, A, lda, x, incx, C, ldc):
                                     int(C), ldc)
     cublasCheckStatus(status)
     
-_libcublas.cublasDdgmm.restype = int
-_libcublas.cublasDdgmm.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
@@ -4895,7 +4900,7 @@ _libcublas.cublasDdgmm.argtypes = [ctypes.c_int,
                                    ctypes.c_void_p,
                                    ctypes.c_int]
 
-@vreq(5)
+@vreq(5,restype,argtypes)
 def cublasDdgmm(handle, mode, m, n, A, lda, x, incx, C, ldc):
     """
     Matrix-diagonal matrix product for real general matrix.
@@ -4911,8 +4916,8 @@ def cublasDdgmm(handle, mode, m, n, A, lda, x, incx, C, ldc):
     cublasCheckStatus(status)
     
 
-_libcublas.cublasCdgmm.restype = int
-_libcublas.cublasCdgmm.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
@@ -4923,7 +4928,7 @@ _libcublas.cublasCdgmm.argtypes = [ctypes.c_int,
                                    ctypes.c_void_p,
                                    ctypes.c_int]
 
-@vreq(5)
+@vreq(5,restype, argtypes)
 def cublasCdgmm(mode, m, n, A, lda, x, incx, C, ldc):
     """
     Matrix-diagonal matrix product for complex general matrix.
@@ -4938,8 +4943,8 @@ def cublasCdgmm(mode, m, n, A, lda, x, incx, C, ldc):
                                     int(C), ldc)
     cublasCheckStatus(status)
     
-_libcublas.cublasZdgmm.restype = int
-_libcublas.cublasZdgmm.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
                                    ctypes.c_int,
@@ -4950,7 +4955,7 @@ _libcublas.cublasZdgmm.argtypes = [ctypes.c_int,
                                    ctypes.c_void_p,
                                    ctypes.c_int]
 
-@vreq(5)
+@vreq(5, restype, argtypes)
 def cublasZdgmm(mode, m, n, A, lda, x, incx, C, ldc):
     """
     Matrix-diagonal matrix product for complex general matrix.
@@ -4968,8 +4973,8 @@ def cublasZdgmm(mode, m, n, A, lda, x, incx, C, ldc):
 ### Batched routines ###
 
 # SgemmBatched, 
-_libcublas.cublasSgemmBatched.restype = int
-_libcublas.cublasSgemmBatched.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                       ctypes.c_int,
                                       ctypes.c_int,
                                       ctypes.c_int,
@@ -4984,7 +4989,7 @@ _libcublas.cublasSgemmBatched.argtypes = [ctypes.c_int,
                                       ctypes.c_void_p,
                                       ctypes.c_int,
                                       ctypes.c_int]
-@vreq(4.1)
+@vreq(4.1,restype,argtypes)
 def cublasSgemmBatched(handle, transa, transb, m, n, k, 
                 alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
     """
@@ -5001,10 +5006,45 @@ def cublasSgemmBatched(handle, transa, transb, m, n, k,
                                        int(C), ldc, batchCount)
     cublasCheckStatus(status)
 
+# DgemmBatched, 
+restype = int
+argtypes = [ctypes.c_int,
+                                      ctypes.c_int,
+                                      ctypes.c_int,
+                                      ctypes.c_int,
+                                      ctypes.c_int,
+                                      ctypes.c_int,
+                                      ctypes.c_void_p,
+                                      ctypes.c_void_p,
+                                      ctypes.c_int,
+                                      ctypes.c_void_p,
+                                      ctypes.c_int,
+                                      ctypes.c_void_p,
+                                      ctypes.c_void_p,
+                                      ctypes.c_int,
+                                      ctypes.c_int]
+@vreq(4.1,restype, argtypes)
+def cublasDgemmBatched(handle, transa, transb, m, n, k, 
+                alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
+    """
+    Matrix-matrix product for arrays of real general matrices.
+
+    """
+
+    status = _libcublas.cublasDgemmBatched(handle,
+                                       _CUBLAS_OP[transa],
+                                       _CUBLAS_OP[transb], m, n, k, 
+                                       ctypes.byref(ctypes.c_double(alpha)),
+                                       int(A), lda, int(B), ldb,
+                                       ctypes.byref(ctypes.c_double(beta)),
+                                       int(C), ldc, batchCount)
+    cublasCheckStatus(status)
+
+
 # StrsmBatched
 
-_libcublas.cublasStrsmBatched.restype = int
-_libcublas.cublasStrsmBatched.argtypes = [ctypes.c_int,
+restype = int
+argtypes = [ctypes.c_int,
                                       ctypes.c_int,
                                       ctypes.c_int,
                                       ctypes.c_int,
@@ -5017,7 +5057,7 @@ _libcublas.cublasStrsmBatched.argtypes = [ctypes.c_int,
                                       ctypes.c_void_p,
                                       ctypes.c_int,
                                       ctypes.c_int]
-@vreq(5.0)
+@vreq(5.0,restype, argtypes)
 def cublasStrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, 
                     A, lda, B, ldb, batchCount):
     """
@@ -5039,15 +5079,16 @@ def cublasStrsmBatched(handle, side, uplo, trans, diag, m, n, alpha,
 
 # getrfBatched
 
-_libcublas.cublasSgetrfBatched.restype = int
-_libcublas.cublasSgetrfBatched.argtypes = [ctypes.c_int,
-                                      ctypes.c_int,
-                                      ctypes.c_void_p,
-                                      ctypes.c_int,
-                                      ctypes.c_void_p,
-                                      ctypes.c_void_p,
-                                      ctypes.c_int]
-@vreq(5.0)
+restype = int
+argtypes = [ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int]
+
+@vreq(5.0, restype, argtypes)
 def cublasSgetrfBatched(handle, n, A, lda, P, info, batchSize):
     """
     This function performs the LU factorization of an array of n x n matrices.
@@ -5060,10 +5101,59 @@ def cublasSgetrfBatched(handle, n, A, lda, P, info, batchSize):
     cublasCheckStatus(status)
 
 
+@vreq(5.0, restype, argtypes)
+def cublasDgetrfBatched(handle, n, A, lda, P, info, batchSize):
+    """
+    This function performs the LU factorization of an array of n x n matrices.
+    """
+
+    status = _libcublas.cublasDgetrfBatched(handle, n,
+                                       int(A), lda, int(P), 
+                                       int(info),batchSize
+                                       )
+    cublasCheckStatus(status)
 
 
 
  
+# getriBatched
+restype = int
+argtypes = [ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,  
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int]
+
+@vreq(5.5,restype,argtypes)
+def cublasSgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+    """
+    This function performs inversion of an array of n x n matrices starting from LU decompositon.
+    """
+
+    status = _libcublas.cublasSgetriBatched(handle, n,
+                                       int(A), lda, int(P), 
+                                       int(C), ldc,
+                                       int(info),batchSize
+                                       )
+    cublasCheckStatus(status)
+
+@vreq(5.5,restype,argtypes)
+def cublasDgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+    """
+    This function performs inversion of an array of n x n matrices starting from LU decompositon.
+    """
+
+    status = _libcublas.cublasDgetriBatched(handle, n,
+                                       int(A), lda, int(P), 
+                                       int(C), ldc,
+                                       int(info),batchSize
+                                       )
+    cublasCheckStatus(status)
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
