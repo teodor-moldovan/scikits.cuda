@@ -477,7 +477,7 @@ class test_cublas(TestCase):
         a_gpu = gpuarray.to_gpu(A)
         a_arr = bptrs(a_gpu)
         p_gpu = gpuarray.empty((l,m), np.int32)
-        i_gpu = gpuarray.zeros(1, np.int32)
+        i_gpu = gpuarray.zeros(l, np.int32)
         X = np.array([ lu_factor(a)[0] for a in A])
 
         cublas.cublasSgetrfBatched(self.cublas_handle, 
@@ -499,7 +499,7 @@ class test_cublas(TestCase):
         c_arr = bptrs(c_gpu)
 
         p_gpu = gpuarray.empty((l,m), np.int32)
-        i_gpu = gpuarray.zeros(1, np.int32)
+        i_gpu = gpuarray.zeros(l, np.int32)
 
         cublas.cublasSgetrfBatched(self.cublas_handle, 
                     m, a_arr.gpudata, m, p_gpu.gpudata, 
